@@ -1,23 +1,28 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../app/routes/app_routes.dart';
-import '../../../core/widgets/custom_button.dart';
-import '../../../core/widgets/custom_text_field.dart';
+import 'package:team_for_gamers/app/routes/app_routes.dart';
+import 'package:team_for_gamers/core/utils/auth_exceptions.dart';
+import 'package:team_for_gamers/core/widgets/custom_button.dart';
+import 'package:team_for_gamers/core/widgets/custom_text_field.dart';
+import 'package:team_for_gamers/features/auth/providers/auth_provider.dart';
 
-class RegisterPage extends StatefulWidget {
+class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  ConsumerState<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -27,10 +32,43 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  void _handleRegister() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implement actual registration
-      context.go(AppRoutes.home);
+  Future<void> _handleRegister() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signUp(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      if (mounted) {
+        context.go(AppRoutes.home);
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(getAuthErrorMessage(e)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Произошла ошибка: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -42,7 +80,7 @@ class _RegisterPageState extends State<RegisterPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: _isLoading ? null : () => context.pop(),
         ),
       ),
       body: SafeArea(
@@ -76,6 +114,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   hintText: 'your.email@example.com',
                   prefixIcon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
+                  enabled: !_isLoading,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Введите email';
@@ -95,6 +134,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   hintText: '••••••••',
                   prefixIcon: Icons.lock_outline,
                   obscureText: !_isPasswordVisible,
+                  enabled: !_isLoading,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _isPasswordVisible
@@ -126,6 +166,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   hintText: '••••••••',
                   prefixIcon: Icons.lock_outline,
                   obscureText: !_isConfirmPasswordVisible,
+                  enabled: !_isLoading,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _isConfirmPasswordVisible
@@ -152,8 +193,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 // Register Button
                 CustomButton(
-                  onPressed: _handleRegister,
+                  onPressed: _isLoading ? () {} : _handleRegister,
                   text: 'Зарегистрироваться',
+                  isLoading: _isLoading,
                 ),
               ],
             ),

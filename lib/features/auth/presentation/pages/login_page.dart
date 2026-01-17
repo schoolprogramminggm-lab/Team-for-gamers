@@ -1,21 +1,26 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../app/routes/app_routes.dart';
-import '../../../core/widgets/custom_button.dart';
-import '../../../core/widgets/custom_text_field.dart';
+import 'package:team_for_gamers/app/routes/app_routes.dart';
+import 'package:team_for_gamers/core/utils/auth_exceptions.dart';
+import 'package:team_for_gamers/core/widgets/custom_button.dart';
+import 'package:team_for_gamers/core/widgets/custom_text_field.dart';
+import 'package:team_for_gamers/features/auth/providers/auth_provider.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -24,11 +29,43 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _handleLogin() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implement actual authentication
-      // For now, just navigate to home
-      context.go(AppRoutes.home);
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signIn(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      if (mounted) {
+        context.go(AppRoutes.home);
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(getAuthErrorMessage(e)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Произошла ошибка: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -57,7 +94,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'LFG',
+                          'Team for Gamers',
                           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 2,
@@ -82,6 +119,7 @@ class _LoginPageState extends State<LoginPage> {
                     hintText: 'your.email@example.com',
                     prefixIcon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
+                    enabled: !_isLoading,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Введите email';
@@ -101,6 +139,7 @@ class _LoginPageState extends State<LoginPage> {
                     hintText: '••••••••',
                     prefixIcon: Icons.lock_outline,
                     obscureText: !_isPasswordVisible,
+                    enabled: !_isLoading,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _isPasswordVisible
@@ -129,7 +168,7 @@ class _LoginPageState extends State<LoginPage> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
+                      onPressed: _isLoading ? null : () {
                         // TODO: Navigate to forgot password
                       },
                       child: const Text('Забыли пароль?'),
@@ -139,8 +178,9 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Login Button
                   CustomButton(
-                    onPressed: _handleLogin,
+                    onPressed: _isLoading ? () {} : _handleLogin,
                     text: 'Войти',
+                    isLoading: _isLoading,
                   ),
                   const SizedBox(height: 16),
 
@@ -150,7 +190,7 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       const Text('Нет аккаунта? '),
                       TextButton(
-                        onPressed: () {
+                        onPressed: _isLoading ? null : () {
                           context.push(AppRoutes.register);
                         },
                         child: const Text('Зарегистрироваться'),
