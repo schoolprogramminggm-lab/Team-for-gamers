@@ -3,9 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:team_for_gamers/app/routes/app_routes.dart';
 import 'package:team_for_gamers/features/auth/providers/auth_provider.dart';
+import 'package:team_for_gamers/features/teams/providers/invitation_provider.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
+
+  @override
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  int _selectedIndex = 0;
 
   Future<void> _handleSignOut(BuildContext context, WidgetRef ref) async {
     try {
@@ -27,19 +35,54 @@ class HomePage extends ConsumerWidget {
     }
   }
 
+  void _onItemTapped(int index) {
+    setState(() => _selectedIndex = index);
+    
+    switch (index) {
+      case 0:
+        // Already on home
+        break;
+      case 1:
+        context.push(AppRoutes.search);
+        break;
+      case 2:
+        context.push(AppRoutes.chats);
+        break;
+      case 3:
+        context.push(AppRoutes.teams);
+        break;
+      case 4:
+        context.push(AppRoutes.profile);
+        break;
+    }
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
+    final unreadCount = ref.watch(unreadInvitationsCountProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Team for Gamers'),
         centerTitle: true,
         actions: [
+          // Invitations badge
+          IconButton(
+            icon: Badge(
+              label: Text('$unreadCount'),
+              isLabelVisible: unreadCount > 0,
+              child: const Icon(Icons.mail_outline),
+            ),
+            onPressed: () {
+              context.push(AppRoutes.invitations);
+            },
+            tooltip: 'Приглашения',
+          ),
           IconButton(
             icon: const Icon(Icons.person_outline),
             onPressed: () {
-              // TODO: Navigate to profile
+              context.push(AppRoutes.profile);
             },
           ),
         ],
@@ -78,64 +121,54 @@ class HomePage extends ConsumerWidget {
                     const SizedBox(height: 4),
                     Text(
                       user.email ?? 'Не указан',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => _handleSignOut(context, ref),
+                icon: const Icon(Icons.logout),
+                label: const Text('Выйти'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                ),
+              ),
             ],
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0),
-              child: Text(
-                'Здесь будет главный экран с поиском игроков',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 48),
-            ElevatedButton.icon(
-              onPressed: () => _handleSignOut(context, ref),
-              icon: const Icon(Icons.logout),
-              label: const Text('Выйти'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              ),
-            ),
           ],
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        onDestinationSelected: (index) {
-          // TODO: Implement navigation between tabs
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
             label: 'Главная',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search),
             label: 'Поиск',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.group_outlined),
-            selectedIcon: Icon(Icons.group),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Сообщения',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.group),
             label: 'Команды',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
             label: 'Профиль',
           ),
         ],

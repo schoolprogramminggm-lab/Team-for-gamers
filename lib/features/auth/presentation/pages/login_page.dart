@@ -87,10 +87,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     tag: 'app_logo',
                     child: Column(
                       children: [
-                        Icon(
-                          Icons.sports_esports,
-                          size: 80,
-                          color: Theme.of(context).colorScheme.primary,
+                        Image.asset(
+                          'assets/icon/app_logo.png',
+                          width: 120,
+                          height: 120,
                         ),
                         const SizedBox(height: 16),
                         Text(

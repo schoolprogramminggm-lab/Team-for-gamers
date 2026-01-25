@@ -7,6 +7,8 @@ import 'package:team_for_gamers/core/utils/auth_exceptions.dart';
 import 'package:team_for_gamers/core/widgets/custom_button.dart';
 import 'package:team_for_gamers/core/widgets/custom_text_field.dart';
 import 'package:team_for_gamers/features/auth/providers/auth_provider.dart';
+import 'package:team_for_gamers/features/profile/data/models/user_model.dart';
+import 'package:team_for_gamers/features/profile/providers/user_provider.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -39,10 +41,22 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
     try {
       final authService = ref.read(authServiceProvider);
-      await authService.signUp(
+      final userRepository = ref.read(userRepositoryProvider);
+      
+      // Регистрация пользователя в Firebase Auth
+      final credential = await authService.signUp(
         email: _emailController.text,
         password: _passwordController.text,
       );
+
+      // Создание профиля в Firestore
+      if (credential.user != null) {
+        final newUser = UserModel.empty(
+          id: credential.user!.uid,
+          email: _emailController.text,
+        );
+        await userRepository.createUser(newUser);
+      }
 
       if (mounted) {
         context.go(AppRoutes.home);

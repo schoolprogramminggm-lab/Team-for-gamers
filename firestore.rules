@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Функция для проверки авторизации
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Функция для проверки владельца документа
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    // Правила для коллекции users
+    match /users/{userId} {
+      // Чтение: все авторизованные пользователи могут читать профили
+      allow read: if isAuthenticated();
+      
+      // Создание: только при регистрации своего профиля
+      allow create: if isAuthenticated() 
+                    && isOwner(userId)
+                    && request.resource.data.id == userId
+                    && request.resource.data.email == request.auth.token.email;
+      
+      // Обновление: только владелец может обновлять свой профиль
+      allow update: if isAuthenticated() 
+                    && isOwner(userId)
+                    && request.resource.data.id == userId
+                    && request.resource.data.email == resource.data.email; // Email нельзя менять
+      
+      // Удаление: только владелец может удалить свой профиль
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Правила для коллекции teams
+    match /teams/{teamId} {
+      // Чтение: все авторизованные пользователи могут читать команды
+      allow read: if isAuthenticated();
+      
+      // Создание: любой авторизованный пользователь может создать команду
+      allow create: if isAuthenticated() 
+                    && request.resource.data.captainId == request.auth.uid;
+      
+      
+      // Обновление: капитан может обновлять всё ИЛИ любой может добавить себя в команду
+      allow update: if isAuthenticated() && (
+        // Капитан может обновлять всё
+        resource.data.captainId == request.auth.uid
+        // ИЛИ пользователь добавляет себя в memberIds
+        || (
+          request.auth.uid in request.resource.data.memberIds
+          && !(request.auth.uid in resource.data.memberIds)
+        )
+      );
+      
+      // Удаление: только капитан может удалить команду
+      allow delete: if isAuthenticated() 
+                    && resource.data.captainId == request.auth.uid;
+      
+      // Правила для сообщений чата команды
+      match /messages/{messageId} {
+        // Чтение и создание: любой авторизованный пользователь может получить доступ
+        // (проверка членства происходит на уровне приложения)
+        allow read, create: if isAuthenticated();
+        
+        // Обновление и удаление: запрещены
+        allow update, delete: if false;
+      }
+    }
+    
+    // Правила для коллекции team_invitations
+    match /team_invitations/{invitationId} {
+      // Чтение: только отправитель и получатель
+      allow read: if isAuthenticated() 
+                  && (resource.data.fromUserId == request.auth.uid 
+                      || resource.data.toUserId == request.auth.uid);
+      
+      // Создание: только авторизованные пользователи
+      allow create: if isAuthenticated() 
+                    && request.resource.data.fromUserId == request.auth.uid;
+      
+      // Обновление: только получатель может обновить статус
+      allow update: if isAuthenticated() 
+                    && resource.data.toUserId == request.auth.uid;
+      
+      // Удаление: отправитель или получатель
+      allow delete: if isAuthenticated() 
+                    && (resource.data.fromUserId == request.auth.uid 
+                        || resource.data.toUserId == request.auth.uid);
+    }
+    
+    // Правила для личных чатов
+    match /chats/{chatId} {
+      // Любой авторизованный пользователь может читать, создавать и обновлять чаты
+      // (проверка членства происходит на уровне приложения)
+      allow read, create, update: if isAuthenticated();
+      
+      // Удаление: запрещено
+      allow delete: if false;
+      
+      // Сообщения личного чата
+      match /messages/{messageId} {
+        // Чтение и создание: любой авторизованный пользователь
+        allow read, create: if isAuthenticated();
+        
+        // Обновление и удаление: запрещены
+        allow update, delete: if false;
+      }
+    }
+    
+    // Запретить доступ ко всем остальным коллекциям по умолчанию
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
