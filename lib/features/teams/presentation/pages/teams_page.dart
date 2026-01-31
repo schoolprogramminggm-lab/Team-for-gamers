@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:team_for_gamers/app/routes/app_routes.dart';
+import 'package:team_for_gamers/app/theme/app_colors.dart';
 import 'package:team_for_gamers/core/constants/app_constants.dart';
 import 'package:team_for_gamers/features/auth/providers/auth_provider.dart';
 import 'package:team_for_gamers/features/teams/presentation/widgets/team_card.dart';
@@ -32,68 +33,89 @@ class _TeamsPageState extends ConsumerState<TeamsPage> {
             : const AsyncValue.data([]));
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
-        title: const Text('Команды'),
+        backgroundColor: AppColors.backgroundDark,
+        title: const Text(
+          'Команды',
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
-          // Tab Selector
+          // Custom Tab Selector
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SegmentedButton<int>(
-              segments: const [
-                ButtonSegment(
-                  value: 0,
-                  label: Text('Все команды'),
-                  icon: Icon(Icons.public),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildTabButton(
+                    text: 'Все команды',
+                    icon: Icons.check_circle,
+                    isSelected: _selectedTab == 0,
+                    onTap: () {
+                      setState(() {
+                        _selectedTab = 0;
+                        _selectedGame = null;
+                      });
+                    },
+                  ),
                 ),
-                ButtonSegment(
-                  value: 1,
-                  label: Text('Мои команды'),
-                  icon: Icon(Icons.person),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTabButton(
+                    text: 'Мои команды',
+                    icon: Icons.person,
+                    isSelected: _selectedTab == 1,
+                    onTap: () {
+                      setState(() {
+                        _selectedTab = 1;
+                        _selectedGame = null;
+                      });
+                    },
+                  ),
                 ),
               ],
-              selected: {_selectedTab},
-              onSelectionChanged: (Set<int> newSelection) {
-                setState(() {
-                  _selectedTab = newSelection.first;
-                  _selectedGame = null; // Reset filter when switching tabs
-                });
-              },
             ),
           ),
+
           // Game Filter
           if (_selectedTab == 0) ...[
             Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: DropdownButtonFormField<String>(
-                value: _selectedGame,
-                decoration: InputDecoration(
-                  labelText: 'Фильтр по игре',
-                  prefixIcon: const Icon(Icons.sports_esports),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Фильтр по игре',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-                hint: const Text('Все игры'),
-                items: [
-                  const DropdownMenuItem<String>(
-                    value: null,
-                    child: Text('Все игры'),
+                  const SizedBox(height: 12),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildGameChip('Все игры', null),
+                        const SizedBox(width: 8),
+                        ...GameConstants.popularGames.map((game) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _buildGameChip(game, game),
+                          );
+                        }),
+                      ],
+                    ),
                   ),
-                  ...GameConstants.popularGames.map((game) {
-                    return DropdownMenuItem(
-                      value: game,
-                      child: Text(game),
-                    );
-                  }).toList(),
                 ],
-                onChanged: (value) {
-                  setState(() => _selectedGame = value);
-                },
               ),
             ),
+            const SizedBox(height: 16),
           ],
 
           // Teams List
@@ -108,25 +130,28 @@ class _TeamsPageState extends ConsumerState<TeamsPage> {
                         Icon(
                           Icons.group_off,
                           size: 64,
-                          color: Colors.grey[400],
+                          color: AppColors.textSecondary,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           _selectedTab == 0
                               ? 'Команды не найдены'
                               : 'Вы еще не состоите в командах',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           _selectedTab == 0
                               ? 'Попробуйте изменить фильтр'
                               : 'Создайте свою команду или вступите в существующую',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[500],
-                              ),
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -134,15 +159,10 @@ class _TeamsPageState extends ConsumerState<TeamsPage> {
                   );
                 }
 
-                return GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.75,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
+                return ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: teams.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final team = teams[index];
                     return TeamCard(
@@ -165,14 +185,21 @@ class _TeamsPageState extends ConsumerState<TeamsPage> {
                       color: Colors.red[300],
                     ),
                     const SizedBox(height: 16),
-                    Text(
+                    const Text(
                       'Ошибка загрузки',
-                      style: Theme.of(context).textTheme.titleLarge,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       error.toString(),
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -182,12 +209,93 @@ class _TeamsPageState extends ConsumerState<TeamsPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () {
           context.push(AppRoutes.createTeam);
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Создать команду'),
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildTabButton({
+    required String text,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? const Color(0xFF0df259).withOpacity(0.2)
+              : AppColors.surfaceDark,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected 
+                ? const Color(0xFF0df259)
+                : AppColors.glassBorder,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected 
+                  ? const Color(0xFF0df259)
+                  : AppColors.textSecondary,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              text,
+              style: TextStyle(
+                color: isSelected 
+                    ? const Color(0xFF0df259)
+                    : AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGameChip(String label, String? value) {
+    final isSelected = _selectedGame == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _selectedGame = value);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withOpacity(0.2)
+              : AppColors.surfaceDark,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primary
+                : AppColors.glassBorder,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? AppColors.primary : AppColors.textSecondary,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

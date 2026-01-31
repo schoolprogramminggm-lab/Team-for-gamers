@@ -43,37 +43,37 @@ class AppTheme {
     );
   }
 
-  // Elevated Button Theme
+  // Elevated Button Theme - Updated to 8px radius (ROUND_EIGHT)
   static final ElevatedButtonThemeData _elevatedButtonTheme = 
       ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
       ),
       elevation: 2,
     ),
   );
 
-  // Input Decoration Theme
+  // Input Decoration Theme - Updated to 8px radius with neon borders
   static InputDecorationTheme _inputDecorationTheme(bool isDark) {
     return InputDecorationTheme(
       filled: true,
       fillColor: isDark ? AppColors.surfaceDark : Colors.grey[100],
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: AppColors.glassBorder, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide(color: AppColors.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide(color: AppColors.error, width: 1),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),

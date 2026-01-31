@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:team_for_gamers/app/theme/app_colors.dart';
 import 'package:team_for_gamers/features/teams/data/models/team_model.dart';
 
 /// Карточка команды для отображения в списке
@@ -15,112 +16,130 @@ class TeamCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
+      elevation: 0,
+      color: AppColors.surfaceDark,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: AppColors.glassBorder,
+          width: 1,
+        ),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              // Team Name
-              Row(
-                children: [
-                  Icon(
-                    Icons.group,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
+              // Purple Team Icon
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.group,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+              ),
+              
+              const SizedBox(width: 16),
+              
+              // Team Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Team Name
+                    Text(
                       team.name,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Game
-              Row(
-                children: [
-                  Icon(
-                    Icons.sports_esports,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    team.game,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[700],
+                    
+                    const SizedBox(height: 4),
+                    
+                    // Game
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.sports_esports,
+                          size: 14,
+                          color: AppColors.textSecondary,
                         ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Members Count
-              Row(
-                children: [
-                  Icon(
-                    Icons.people,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${team.memberIds.length}/${team.maxMembers} участников',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[700],
+                        const SizedBox(width: 4),
+                        Text(
+                          team.game,
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
                         ),
-                  ),
-                ],
-              ),
-
-              // Description (if available)
-              if (team.description != null && team.description!.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  team.description!,
-                  style: Theme.of(context).textTheme.bodySmall,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-
-              const SizedBox(height: 12),
-
-              // Status Badge
-              Align(
-                alignment: Alignment.centerRight,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: team.isFull
-                        ? Colors.red.withOpacity(0.1)
-                        : Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    team.isFull ? 'Заполнена' : 'Есть места',
-                    style: TextStyle(
-                      color: team.isFull ? Colors.red : Colors.green,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
+                      ],
                     ),
+                    
+                    const SizedBox(height: 4),
+                    
+                    // Members Count
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.people,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${team.memberIds.length}/${team.maxMembers} участников',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(width: 12),
+              
+              // Status Button
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: team.isFull 
+                      ? Colors.red.withOpacity(0.2)
+                      : const Color(0xFF0df259).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: team.isFull 
+                        ? Colors.red 
+                        : const Color(0xFF0df259),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  team.isFull ? 'Заполнена' : 'Есть места',
+                  style: TextStyle(
+                    color: team.isFull 
+                        ? Colors.red 
+                        : const Color(0xFF0df259),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
                   ),
                 ),
               ),
